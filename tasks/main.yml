@@ -1,0 +1,53 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  changed_when: false
+  become: true
+  tags:
+    - kvm
+
+- name: Install required packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  become: true
+  with_items:
+    - qemu-kvm
+    - libvirt-daemon-system
+    - libvirt-clients
+    - virtinst
+    - bridge-utils
+  tags:
+    - kvm
+
+- name: Enable and start libvirt service
+  service:
+    name: libvirtd
+    state: started
+    enabled: yes
+  become: true
+  tags:
+    - kvm
+
+- name: Add user to libvirt group
+  user:
+    name: "{{ ansible_user }}"
+    groups: libvirt
+    append: yes
+  become: true
+  tags:
+    - kvm
+
+
+# if kvm_users is defined, add them to the libvirt group
+- name: Add kvm_users to libvirt group
+  user:
+    name: "{{ item }}"
+    groups: libvirt
+    append: yes
+  become: true
+  with_items: "{{ kvm_users }}"
+  when: kvm_users is defined
+  tags:
+    - kvm
